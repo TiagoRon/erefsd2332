@@ -12,9 +12,17 @@ venv/
 # Generated Content
 output/
 test_output/
-*.mp4
-*.mp3
-*.wav
+
+# Root media files (temp)
+/*.mp4
+/*.mp3
+/*.wav
 
 # Logs
 *.log
+
+# Allow source assets folders (force inclusion just in case)
+!assets/
+!music/
+!sfx/
+!backgrounds/
