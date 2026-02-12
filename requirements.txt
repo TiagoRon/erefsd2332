@@ -1,0 +1,12 @@
+moviepy
+edge-tts
+google-generativeai
+requests
+python-dotenv
+pillow
+numpy
+proglog
+imageio
+imageio-ffmpeg
+decorator
+scipy

@@ -1,0 +1,46 @@
+name: Daily AutoShorts Generator
+
+on:
+  schedule:
+    - cron: '0 13 * * *' # Runs at 13:00 UTC (10:00 AM Argentina/Brazil)
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install system dependencies (ImageMagick)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y imagemagick
+        # Fix ImageMagick policy to allow PDF/text operations if needed by MoviePy
+        sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run AutoShorts Generator
+      env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        VIDEO_COUNT: 1
+        VIDEO_STYLE: curiosity
+      run: python main.py
+
+    - name: Upload Video Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: daily-shorts
+        path: output/*.mp4
+        retention-days: 5
