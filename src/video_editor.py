@@ -952,14 +952,14 @@ def assemble_video(scenes, music_dir, output_file, title_text=None, mood="myster
                         input_ratio = c.w / c.h
                         target_ratio = 1080 / 1920
                          
-                         if input_ratio > target_ratio:
-                             # Input is "wider" than target (e.g. 16:9 vs 9:16) -> Fill Height, Crop Sides
-                             c = c.resize(height=1920)
-                             c = c.crop(x1=(c.w - 1080)/2, width=1080, height=1920)
-                         else:
-                             # Input is "taller" than target (rare/skinny) -> Fill Width, Crop Top/Bottom
-                             c = c.resize(width=1080)
-                             c = c.crop(y1=(c.h - 1920)/2, width=1080, height=1920)
+                        if input_ratio > target_ratio:
+                            # Input is "wider" than target (e.g. 16:9 vs 9:16) -> Fill Height, Crop Sides
+                            c = c.resize(height=1920)
+                            c = c.crop(x1=(c.w - 1080)/2, width=1080, height=1920)
+                        else:
+                            # Input is "taller" than target (rare/skinny) -> Fill Width, Crop Top/Bottom
+                            c = c.resize(width=1080)
+                            c = c.crop(y1=(c.h - 1920)/2, width=1080, height=1920)
                 
                 # --- NEW ORIGINALITY FILTERS ---
                 # 1. Color Grading (Cinematic Style)
