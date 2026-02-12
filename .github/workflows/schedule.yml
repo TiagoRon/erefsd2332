@@ -38,8 +38,13 @@ jobs:
         VIDEO_STYLE: curiosity
       run: python main.py
 
+    - name: Debug - List Output
+      if: always()
+      run: ls -R output/ || echo "Output dir not found"
+
     - name: Upload Video Artifact
       uses: actions/upload-artifact@v4
+      if: always()
       with:
         name: daily-shorts
         path: output/
