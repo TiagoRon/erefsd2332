@@ -839,7 +839,17 @@ def create_short(script_data, audio_files, background_dir, music_dir, output_fil
 
         final_layers = [video_bg] + subtitle_clips
         final = CompositeVideoClip(final_layers, size=(1080, 1920)).set_audio(final_audio)
-        final.write_videofile(output_file, fps=30, codec='libx264', audio_codec='aac', bitrate="8000k", preset='medium')
+        final.write_videofile(output_file, fps=30, codec='libx264', audio_codec='aac', bitrate="8000k", preset='medium', threads=2)
+        
+        # Cleanup
+        final.close()
+        for c in final_clips:
+            try: c.close()
+            except: pass
+        for sfx in sfx_lib.values():
+            try: sfx.close()
+            except: pass
+            
         return True
 
     except Exception as e:

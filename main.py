@@ -371,6 +371,14 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
             except Exception as e:
                 log_func(f"⚠️ Error en limpieza: {e}")
 
+            except Exception as e:
+                log_func(f"⚠️ Error en limpieza: {e}")
+
+            # Force Garbage Collection
+            import gc
+            gc.collect()
+            log_func("🗑️ Memoria liberada (GC).")
+
         else:
             log_func("Falló la creación del video.")
 
