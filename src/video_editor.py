@@ -534,13 +534,15 @@ def create_karaoke_clips(word_timings, duration, start_offset, width=1080, heigh
         # Let's verify what font object we have.
         if isinstance(font, ImageFont.FreeTypeFont): # Changed from ImageFont.ImageFont to ImageFont.FreeTypeFont for accuracy
              # TrueType
-             avg_char_width = fontsize * 0.50
+             # INCREASED ESTIMATE: Montserrat ExtraBold is WIDE. 0.50 was too optimistic.
+             avg_char_width = fontsize * 0.65 
         else:
              # Default (Bitmap?)
              avg_char_width = 10 # Tiny
              
         # Use narrower width to force 2-4 words per line (Punchy style)
-        chars_per_line = int((width * 0.7) / avg_char_width) 
+        # Reduced multiplier from 0.7 to 0.6 to give more safety margin
+        chars_per_line = int((width * 0.6) / avg_char_width) 
     
     # Prepare full_text
     full_text = raw_text if raw_text else ""
