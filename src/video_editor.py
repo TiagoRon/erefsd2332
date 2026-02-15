@@ -994,6 +994,9 @@ def assemble_video(scenes, music_dir, output_file, title_text=None, mood="myster
                         # If much larger, resize first close to target height (Optimization)
                         if c.h > 2000:
                             c = c.resize(height=1920) 
+                            # Force GC after heavy resize
+                            import gc
+                            gc.collect() 
                         
                         # OPTIMIZATION: Always use Center Crop (Fill) for standard 16:9 content.
                         # The previous "Blurry Background" effect (Composite 2 layers) was doubling the render time per frame.
@@ -1149,6 +1152,13 @@ def assemble_video(scenes, music_dir, output_file, title_text=None, mood="myster
             
             scene_comp = scene_comp.set_audio(audioclip)
             final_clips.append(scene_comp)
+            
+            # --- MEMORY SAFETY ---
+            # Explicitly clear large objects if possible
+            del full_visual
+            del scene_overlays
+            import gc
+            if idx % 2 == 0: gc.collect() # Collect every 2 scenes
             
         if not final_clips: return False
 
@@ -1347,7 +1357,7 @@ def assemble_video(scenes, music_dir, output_file, title_text=None, mood="myster
             audio_codec='aac', 
             bitrate="8000k", 
             preset='veryfast',   # Balanced speed/stability
-            threads=4          # Enable Multithreading
+            threads=1          # SAFE MODE: Reduce threads to prevent OOM on GitHub Runners
         )
         # Cleanup Resources
         try:
