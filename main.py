@@ -128,6 +128,20 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
             continue
         
         log_func(f"   Título: {script.get('title', 'Sin título')}")
+
+        # --- IMPORTANT: Save to History IMMEDIATELY to prevent duplicates even if crash ---
+        try:
+            # hm initialized at start
+            if script.get('title'):
+                hm.add_title(script.get('title'))
+            
+            if style == "what_if" and current_topic:
+                 hm.add_used_topic(current_topic)
+            elif current_topic:
+                 hm.add_trend(current_topic)
+            log_func("✅ Agregado a historial (Preventivo) para no repetir.")
+        except Exception as e:
+            log_func(f"⚠️ Error guardando historial: {e}")
         
         # 2. Process Scenes (New V2.0 Logic)
         log_func("2. Analizando escenas y generando activos...")
@@ -306,21 +320,9 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
         log_func("3. Componiendo edición final (Montaje)...")
         output_file = os.path.join(video_output_dir, "short_final.mp4")
         
-        # New function signature for editor
-        from src.video_editor import assemble_video
-        
-        # Pass title for overlay
-        vid_title = script.get('title', '').upper()
-        # Get Mood (Default to mystery)
-        vid_mood = script.get('mood', 'mystery').lower()
-        log_func(f"   🎵 Mood detectado: {vid_mood}")
-        
-        success = assemble_video(processed_scenes, "music", output_file, title_text=vid_title, mood=vid_mood)
-        
-        if success:
-            log_func(f"¡ÉXITO! Video guardado en: {output_file}")
-            
-            # Save metadata
+        # --- SAVE METADATA EARLY (Robustness) ---
+        try:
+             # Save metadata TXT
             with open(os.path.join(video_output_dir, "metadata.txt"), "w", encoding="utf-8") as f:
                 f.write(f"Título: {script.get('title')}\n")
                 f.write(f"Hashtags: {' '.join(script.get('hashtags', []))}\n")
@@ -340,26 +342,42 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
             }
             with open(os.path.join(video_output_dir, "metadata.json"), "w", encoding="utf-8") as f:
                 json.dump(seo_data, f, indent=4, ensure_ascii=False)
+            log_func("📝 Metadata guardada.")
+        except Exception as e_meta:
+             log_func(f"⚠️ Error guardando metadata: {e_meta}")
+
+        # New function signature for editor
+        from src.video_editor import assemble_video
+        
+        # Pass title for overlay
+        vid_title = script.get('title', '').upper()
+        # Get Mood (Default to mystery)
+        # vid_mood calculated above
+        
+        log_func(f"   🎵 Mood detectado: {vid_mood}")
+        
+        success = assemble_video(processed_scenes, "music", output_file, title_text=vid_title, mood=vid_mood)
+        
+        if success:
+            log_func(f"¡ÉXITO! Video guardado en: {output_file}")
+
             
-            # Save to History
-            try:
-                # hm initialized at start
-                hm.add_title(script.get('title'))
-                if style == "what_if" and current_topic:
-                     hm.add_used_topic(current_topic)
-                elif current_topic:
-                     hm.add_trend(current_topic)
-                log_func("✅ Agregado a historial para no repetir.")
-            except Exception as e:
-                log_func(f"⚠️ Error guardando historial: {e}")
+            # History already saved at start of loop
+            pass
 
             # --- CLEANUP: Remove intermediate files (voices, scenes, etc.) ---
             try:
                 log_func("🧹 Limpiando archivos temporales...")
+                # Force GC before cleanup to release file handles
+                import gc
+                gc.collect()
+
                 for fname in os.listdir(video_output_dir):
-                    if fname.endswith(".mp4") or fname.endswith(".txt") or fname.endswith(".json"):
-                        continue # Keep final video and metadata
+                    # Keep final video and metadata
+                    if fname == "short_final.mp4" or fname.endswith(".txt") or fname.endswith(".json"):
+                        continue
                     
+                    # Delete everything else (audio_X.mp3, scene_X.mp4, scene_X_partY.mp4, etc.)
                     file_path = os.path.join(video_output_dir, fname)
                     try:
                         if os.path.isfile(file_path):
@@ -369,10 +387,7 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
                         log_func(f"   ⚠️ No se pudo borrar {fname}: {ex}")
                 log_func("✨ Limpieza completada. Solo queda el video final y metadatos.")
             except Exception as e:
-                log_func(f"⚠️ Error en limpieza: {e}")
-
-            except Exception as e:
-                log_func(f"⚠️ Error en limpieza: {e}")
+                log_func(f"⚠️ Error en limpieza general: {e}")
 
             # Force Garbage Collection
             import gc

@@ -798,6 +798,10 @@ def create_short(script_data, audio_files, background_dir, music_dir, output_fil
         bg_path = os.path.join(background_dir, random.choice(bg_files))
         video_bg = VideoFileClip(bg_path)
         
+        # ... logic continues ...
+        # Use context manager or explicit close for video_bg later
+
+        
         if video_bg.duration < total_duration:
             video_bg = video_bg.loop(duration=total_duration + 1.5)
             
@@ -1345,6 +1349,18 @@ def assemble_video(scenes, music_dir, output_file, title_text=None, mood="myster
             preset='veryfast',   # Balanced speed/stability
             threads=4          # Enable Multithreading
         )
+        # Cleanup Resources
+        try:
+            final_video.close()
+            for c in final_clips:
+                try: c.close()
+                except: pass
+            for s in sfx_lib.values():
+                try: s.close()
+                except: pass
+        except:
+            pass
+            
         return True
 
     except Exception as e:
