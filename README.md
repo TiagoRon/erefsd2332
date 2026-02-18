@@ -21,9 +21,18 @@ Generador automático de YouTube Shorts en español, potenciado por Inteligencia
    ```bash
    pip install -r requirements.txt
    ```
-3. Configura tu API Key:
-   - Renombra `.env.example` a `.env`.
-   - Abre el archivo y pega tu clave: `GOOGLE_API_KEY=tu_clave_aqui`.
+## Configuración (Importante)
+1. **API Key de Gemini**:
+   - Ve a [Google AI Studio](https://aistudio.google.com/) y consigue tu API Key gratis.
+   - Renombra el archivo `.env.example` a `.env`.
+   - Abre `.env` con un editor de texto y pega tu clave donde dice `YOUR_API_KEY_HERE`.
+   
+   Ejemplo:
+   `GOOGLE_API_KEY=AIzaSy...`
+
+2. **FFmpeg**:
+   - El programa necesita FFmpeg para procesar video.
+   - Descárgalo desde [ffmpeg.org](https://ffmpeg.org/download.html) y asegúrate de agregarlo al PATH de tu sistema (o instálalo con `winget install ffmpeg` en Windows).
 
 ## Cómo Usar
 

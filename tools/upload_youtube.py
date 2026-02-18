@@ -10,9 +10,9 @@ from selenium.webdriver.support import expected_conditions as EC
 # CONFIGURATION
 # ----------------
 # ⚠️ CAMBIA ESTO CON TU RUTA DE PERFIL DE CHROME/BRAVE
+# Default: Try to guess standard Chrome path
 # Para Chrome: C:\Users\TU_USUARIO\AppData\Local\Google\Chrome\User Data
-# Para Brave:  C:\Users\TU_USUARIO\AppData\Local\BraveSoftware\Brave-Browser\User Data
-USER_DATA_DIR = r"C:\Users\tiago\AppData\Local\Google\Chrome\User Data" 
+USER_DATA_DIR = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Google", "Chrome", "User Data")
 PROFILE_DIR = "Default" # O "Profile 1", "Profile 2", etc.
 
 def get_videos_to_upload(source_dir):

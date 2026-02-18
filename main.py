@@ -26,7 +26,13 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
     
     # Init History Manager once
     from src.history_manager import HistoryManager
+    from src.history_manager import HistoryManager
     hm = HistoryManager()
+    
+    # Ensure output root exists
+    os.makedirs("output", exist_ok=True)
+    
+    success_count = 0
 
     for i in range(count):
         log_func(f"\n--- Generando Video {i+1}/{count} ---")
@@ -281,6 +287,7 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
                     # UNLESS it's very long (then it might get boring).
                     # For now, simplistic: Use specific for everything if found.
                     use_specific = True
+
                 
                 if use_specific:
                     # We already have the file at specific_file_path
@@ -307,7 +314,12 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
                             sub_dur,
                             bg_path
                         )
+                        )
                     visual_clips_paths.append(bg_path)
+            
+            # FORCE GC after huge search
+            import gc
+            gc.collect()
             
             # Clean up old key to prevent confusion
             if 'image_overlay_path' in scene: del scene['image_overlay_path']
@@ -360,42 +372,47 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
         
         if success:
             log_func(f"¡ÉXITO! Video guardado en: {output_file}")
-
-            
+            success_count += 1
             # History already saved at start of loop
             pass
-
-            # --- CLEANUP: Remove intermediate files (voices, scenes, etc.) ---
-            try:
-                log_func("🧹 Limpiando archivos temporales...")
-                # Force GC before cleanup to release file handles
-                import gc
-                gc.collect()
-
-                for fname in os.listdir(video_output_dir):
-                    # Keep final video and metadata
-                    if fname == "short_final.mp4" or fname.endswith(".txt") or fname.endswith(".json"):
-                        continue
-                    
-                    # Delete everything else (audio_X.mp3, scene_X.mp4, scene_X_partY.mp4, etc.)
-                    file_path = os.path.join(video_output_dir, fname)
-                    try:
-                        if os.path.isfile(file_path):
-                            os.remove(file_path)
-                            # log_func(f"   🗑️ Borrado: {fname}")
-                    except Exception as ex:
-                        log_func(f"   ⚠️ No se pudo borrar {fname}: {ex}")
-                log_func("✨ Limpieza completada. Solo queda el video final y metadatos.")
-            except Exception as e:
-                log_func(f"⚠️ Error en limpieza general: {e}")
-
-            # Force Garbage Collection
-            import gc
-            gc.collect()
-            log_func("🗑️ Memoria liberada (GC).")
-
         else:
             log_func("Falló la creación del video.")
+
+        # --- CLEANUP: Remove intermediate files (ALWAYS RUN) ---
+        try:
+            log_func("🧹 Limpiando archivos temporales...")
+            
+            # Force GC and wait for Windows file locks
+            import gc
+            import time
+            gc.collect()
+            time.sleep(2) # Give OS time to release handles
+
+            for fname in os.listdir(video_output_dir):
+                # Keep final video and metadata
+                if fname == "short_final.mp4" or fname.endswith(".txt") or fname.endswith(".json"):
+                    continue
+                
+                # Delete everything else
+                file_path = os.path.join(video_output_dir, fname)
+                try:
+                    if os.path.isfile(file_path):
+                        os.remove(file_path)
+                except Exception as ex:
+                    log_func(f"   ⚠️ No se pudo borrar {fname} (Posible Lock): {ex}")
+            log_func("✨ Limpieza completada.")
+        except Exception as e:
+            log_func(f"⚠️ Error en limpieza general: {e}")
+
+        # Final loop GC
+        gc.collect()
+
+    # DEBUG: List all files in output
+    print(f"📂 Debug Output Content: {os.listdir('output')}")
+    for root, dirs, files in os.walk("output"):
+        print(f"  {root}: {files}")
+
+    return success_count > 0
 
 def main():
     import sys
@@ -422,7 +439,11 @@ def main():
             count = 1
             topic = None
             
-    run_batch(count, topic, style=env_style)
+            
+    if run_batch(count, topic, style=env_style):
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
