@@ -10,7 +10,18 @@ jobs:
     name: Generate All Videos
     runs-on: ubuntu-latest
     
+    permissions:
+      actions: write
+      contents: write
+
     steps:
+    - name: Free Space - Delete Old Runs
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Delete last 5 completed runs to free up storage space
+        gh run list --status completed --limit 5 --json databaseId -q '.[].databaseId' | xargs -I {} gh run delete {} || echo "No runs to delete"
+
     - name: Checkout code
       uses: actions/checkout@v4
 
