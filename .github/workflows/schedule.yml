@@ -6,13 +6,10 @@ on:
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:
-  build:
+  generate_bundle:
+    name: Generate All Videos
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        style: [curiosity, what_if, top_3]
-      fail-fast: false # If one fails, let others continue
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -25,8 +22,7 @@ jobs:
     - name: Install system dependencies (ImageMagick & FFmpeg)
       run: |
         sudo apt-get update
-        sudo apt-get install -y imagemagick ffmpeg
-        # Fix ImageMagick policy to allow PDF/text operations if needed by MoviePy
+        sudo apt-get install -y imagemagick ffmpeg zip
         sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
 
     - name: Install Python dependencies
@@ -34,22 +30,58 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run AutoShorts Generator (${{ matrix.style }})
+    - name: Generate 'Top 3' Video
       env:
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-        VIDEO_COUNT: 2
-        VIDEO_STYLE: ${{ matrix.style }}
+        VIDEO_COUNT: 1
+        VIDEO_STYLE: top_3
+      continue-on-error: true
       run: python main.py
+
+    - name: Generate 'What If' Video
+      env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        VIDEO_COUNT: 1
+        VIDEO_STYLE: what_if
+      continue-on-error: true
+      run: python main.py
+
+    - name: Generate 'Curiosity' Video
+      env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        VIDEO_COUNT: 1
+        VIDEO_STYLE: curiosity
+      continue-on-error: true
+      run: python main.py
+
+    - name: Commit & Push History (Prevent Duplicates)
+      continue-on-error: true
+      run: |
+        git config user.name "AutoShorts Bot"
+        git config user.email "actions@github.com"
+        git pull origin main --rebase || echo "No changes to pull"
+        git add video_history.json
+        git commit -m "Update video history [skip ci]" || echo "No changes to commit"
+        git push origin main || echo "Failed to push history"
 
     - name: Debug - List Output
       if: always()
       run: ls -R output/ || echo "Output dir not found"
 
-    - name: Upload Video Artifact
-      uses: actions/upload-artifact@v4
+    - name: Zip All Videos
       if: always()
+      run: |
+        cd output
+        zip -r ../all_daily_videos.zip .
+        cd ..
+
+    - name: Upload Final Bundle
+      if: always()
+      uses: actions/upload-artifact@v4
       with:
-        name: daily-shorts-${{ matrix.style }}
-        path: output/
+        name: ALL_DAILY_VIDEOS
+        path: all_daily_videos.zip
         retention-days: 5
