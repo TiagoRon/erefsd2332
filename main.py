@@ -313,8 +313,7 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
                             scene.get('color_palette', 'dark'),
                             sub_dur,
                             bg_path
-                        )
-                        )
+                         )
                     visual_clips_paths.append(bg_path)
             
             # FORCE GC after huge search
