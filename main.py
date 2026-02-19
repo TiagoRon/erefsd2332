@@ -343,6 +343,15 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
             with open(os.path.join(video_output_dir, "metadata.txt"), "w", encoding="utf-8") as f:
                 f.write(f"Título: {script.get('title')}\n")
                 f.write(f"Hashtags: {' '.join(script.get('hashtags', []))}\n")
+                
+                # --- NEW TAGS SECTION ---
+                tags_str = script.get('tags_string', '')
+                if not tags_str and script.get('tags'):
+                    # Fallback if AI forgot tags_string but gave tags list
+                    tags_str = ",".join(script.get('tags', []))
+                
+                f.write(f"Etiquetas Youtube (Copia y pega):\n{tags_str}\n\n")
+                
                 f.write("Guion:\n")
                 for s in scenes:
                     f.write(f"- {s['text']}\n")
@@ -354,6 +363,7 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
                 "seo_title": script.get('seo_title'),
                 "seo_description": script.get('seo_description'),
                 "tags": script.get('tags', []),
+                "tags_string": script.get('tags_string', ''),
                 "hashtags": script.get('hashtags', []),
                 "mood": vid_mood
             }

@@ -72,6 +72,11 @@ def generate_script(topic=None, specific_hook=None, style="curiosity"):
     1. Break script into **5 to 7 SHORT VISUAL SCENES**.
     2. Analyze the EMOTIONAL TONE (Mood) of the script.
     3. Generate VIRAL SEO METADATA (Title, Description, Tags).
+    4. **TAGS OPTIMIZATION**:
+       - Generate 15-20 high-traffic YouTube tags.
+       - Mix broad keywords (e.g., "History", "Science") and specific long-tail keywords (e.g., "Hidden truths about Titanic").
+       - **CRITICAL**: The `tags_string` field must be a SINGLE string of comma-separated tags.
+       - **CRITICAL**: The total length of `tags_string` MUST BE under 500 characters.
     
     RULES:
     1. **Hyper-Fast Pacing**: visual changes every 2-4 seconds.
@@ -94,6 +99,7 @@ def generate_script(topic=None, specific_hook=None, style="curiosity"):
       "seo_title": "CLICKBAIT Viral Title for YouTube Shorts (Spanish)",
       "seo_description": "3-line SEO optimized description with keywords (Spanish)",
       "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10"],
+      "tags_string": "comma, separated, list, of, tags, under, 500, chars, for, youtube",
       "hashtags": ["#tag1", "#tag2"],
       "scenes": [
         {{
