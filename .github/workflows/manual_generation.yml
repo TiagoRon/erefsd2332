@@ -86,7 +86,7 @@ jobs:
       run: |
         git config user.name "AutoShorts Bot"
         git config user.email "actions@github.com"
-        git pull origin main --rebase || echo "No changes to pull"
+        git pull origin main --rebase --autostash || echo "No changes to pull"
         git add video_history.json
         git commit -m "Update video history from manual run [skip ci]" || echo "No changes to commit"
         git push origin main || echo "Failed to push history"
@@ -94,8 +94,9 @@ jobs:
     - name: Zip Generated Videos
       if: always()
       run: |
+        mkdir -p output
         cd output
-        zip -r ../generated_videos.zip .
+        zip -r ../generated_videos.zip . || echo "Zip empty or failed"
         cd ..
 
     - name: Upload Final Bundle
