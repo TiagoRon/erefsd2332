@@ -316,7 +316,7 @@ def get_youtube_clip(query, output_path, duration=4.0):
 
     # Quiet info-fetch options
     ydl_opts_info = {
-        'format': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/bestvideo[height<=1080]/best',
+        'format': 'bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/bestvideo+bestaudio/best',
         'noplaylist': True,
         'quiet': True,
         'no_warnings': True,
@@ -369,7 +369,7 @@ def get_youtube_clip(query, output_path, duration=4.0):
 
     ydl_opts_download = {
         # Prefer video+audio merged; fallback to single pre-merged file if ffmpeg fails to mux
-        'format': 'bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/bestvideo[ext=mp4][height<=1080]/best[ext=mp4][height<=1080]/best[height<=1080]/best',
+        'format': 'bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/bestvideo+bestaudio/best',
         'outtmpl': temp_output,
         'quiet': True,
         'no_warnings': True,
