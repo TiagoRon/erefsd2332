@@ -30,7 +30,10 @@ def cloud_main():
     
     # 2. Run Batch
     try:
-        run_batch(count=count, topic=topic, style=style, watermark_text=watermark, lang=lang, log_func=print)
+        generated = run_batch(count=count, topic=topic, style=style, watermark_text=watermark, lang=lang, log_func=print)
+        if not generated:
+             print("❌ Cloud Batch Failed: No videos were successfully generated (Possible API Key issue).")
+             sys.exit(1)
         print("✅ Cloud Batch Completed Successfully.")
     except Exception as e:
         print(f"❌ Cloud Batch Failed: {e}")
