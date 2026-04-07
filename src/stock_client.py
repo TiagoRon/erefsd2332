@@ -320,8 +320,7 @@ def get_youtube_clip(query, output_path, duration=4.0):
         'quiet': True,
         'no_warnings': True,
         'socket_timeout': 15,  # Don't hang forever
-        'extractor_args': {'youtube': ['player_client=ios,tv']},
-        'impersonate': 'chrome',
+        'extractor_args': {'youtube': ['player_client=default']},
     }
     
     if os.path.exists("cookies.txt"):
@@ -376,8 +375,7 @@ def get_youtube_clip(query, output_path, duration=4.0):
         'no_warnings': True,
         'socket_timeout': 20,
         'merge_output_format': 'mp4',
-        'extractor_args': {'youtube': ['player_client=ios,tv']},
-        'impersonate': 'chrome',
+        'extractor_args': {'youtube': ['player_client=default']},
         # Download only the needed section cleanly (RE-ENCODE)
         # We explicitly omit 'force_keyframes_at_cuts' to ensure ffmpeg re-encodes the snippet
         # cleanly, providing an I-Frame at t=0 so MoviePy doesn't generate grey/glitchy screens!
