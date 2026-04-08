@@ -4,7 +4,10 @@ import random
 import json
 import subprocess
 import string
+import threading
+import time
 
+yt_dlp_lock = threading.Lock()
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
 
 def get_wikipedia_image(query, output_path):
@@ -320,36 +323,35 @@ def get_youtube_clip(query, output_path, duration=4.0):
         'quiet': True,
         'no_warnings': True,
         'socket_timeout': 15,  # Don't hang forever
-        'extractor_args': {'youtube': ['player_client=default']},
+        'extractor_args': {'youtube': ['player_client=android']},
     }
-    
-    if os.path.exists("cookies.txt"):
-        ydl_opts_info["cookiefile"] = "cookies.txt"
 
     video = None
     url = None
     vid_duration = 0
 
-    for search_q in search_attempts:
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts_info) as ydl:
-                print(f"      🔍 Probando búsqueda: '{search_q}'...")
-                info = ydl.extract_info(search_q, download=False)
-                candidate = None
-                if info and 'entries' in info and len(info['entries']) > 0:
-                    candidate = info['entries'][0]
-                elif info:
-                    candidate = info
+    with yt_dlp_lock:
+        time.sleep(random.uniform(1.0, 3.0)) # Stagger requests to avoid IP bot block
+        for search_q in search_attempts:
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts_info) as ydl:
+                    print(f"      🔍 Probando búsqueda: '{search_q}'...")
+                    info = ydl.extract_info(search_q, download=False)
+                    candidate = None
+                    if info and 'entries' in info and len(info['entries']) > 0:
+                        candidate = info['entries'][0]
+                    elif info:
+                        candidate = info
 
-                if candidate and candidate.get('duration', 0) > 0:
-                    video = candidate
-                    vid_duration = video.get('duration', 0)
-                    url = video.get('webpage_url') or video.get('url')
-                    print(f"      ✅ Encontrado: '{video.get('title', '?')}' ({vid_duration}s)")
-                    break  # Successful — stop trying
-        except Exception as e:
-            print(f"      ⚠️ Búsqueda fallida ({search_q}): {e}")
-            continue
+                    if candidate and candidate.get('duration', 0) > 0:
+                        video = candidate
+                        vid_duration = video.get('duration', 0)
+                        url = video.get('webpage_url') or video.get('url')
+                        print(f"      ✅ Encontrado: '{video.get('title', '?')}' ({vid_duration}s)")
+                        break  # Successful — stop trying
+            except Exception as e:
+                print(f"      ⚠️ Búsqueda fallida ({search_q}): {e}")
+                continue
 
     if not video or not url:
         print(f"      ⚠️ No se encontró ningún video en YouTube para '{query}'.")
@@ -375,15 +377,12 @@ def get_youtube_clip(query, output_path, duration=4.0):
         'no_warnings': True,
         'socket_timeout': 20,
         'merge_output_format': 'mp4',
-        'extractor_args': {'youtube': ['player_client=default']},
+        'extractor_args': {'youtube': ['player_client=android']},
         # Download only the needed section cleanly (RE-ENCODE)
         # We explicitly omit 'force_keyframes_at_cuts' to ensure ffmpeg re-encodes the snippet
         # cleanly, providing an I-Frame at t=0 so MoviePy doesn't generate grey/glitchy screens!
         'download_ranges': yt_dlp.utils.download_range_func(None, [(start_time, end_time)]),
     }
-    
-    if os.path.exists("cookies.txt"):
-        ydl_opts_download["cookiefile"] = "cookies.txt"
 
     try:
         print(f"      ⏱️ Extrayendo {duration}s desde t={start_time}s...")
