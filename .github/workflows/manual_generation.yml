@@ -70,7 +70,7 @@ jobs:
           echo "# https://curl.haxx.se/rfc/cookie_spec.html" >> cookies.txt
           echo "# This is a generated file! Do not edit." >> cookies.txt
           echo "" >> cookies.txt
-          echo "$YOUTUBE_COOKIES" | tr -d '\r' | awk '!/^$/ && !/^#/ && !/esto/ {print}' >> cookies.txt
+          echo "$YOUTUBE_COOKIES" | tr -d '\r' >> cookies.txt
           head -n 5 cookies.txt || true
           echo "Cookies saved and verified via Unix tools."
         fi

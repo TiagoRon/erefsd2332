@@ -41,6 +41,20 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Set up YouTube Cookies (Optional)
+      env:
+        YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+      run: |
+        if [ -n "$YOUTUBE_COOKIES" ]; then
+          echo "# Netscape HTTP Cookie File" > cookies.txt
+          echo "# https://curl.haxx.se/rfc/cookie_spec.html" >> cookies.txt
+          echo "# This is a generated file! Do not edit." >> cookies.txt
+          echo "" >> cookies.txt
+          echo "$YOUTUBE_COOKIES" | tr -d '\r' >> cookies.txt
+          head -n 5 cookies.txt || true
+          echo "Cookies saved and verified via Unix tools."
+        fi
+
     - name: Generate 'Top 3' Video
       env:
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
