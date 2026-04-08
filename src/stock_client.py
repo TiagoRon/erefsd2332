@@ -325,6 +325,14 @@ def get_youtube_clip(query, output_path, duration=4.0):
         'socket_timeout': 15,  # Don't hang forever
         'extractor_args': {'youtube': ['player_client=android']},
     }
+    
+    if os.path.exists("cookies.txt"):
+        # Solo cargar si el archivo tiene algo útil, para evitar clavar a yt-dlp con archivos vacíos
+        try:
+            with open("cookies.txt", "r") as f:
+                if ".youtube.com" in f.read():
+                    ydl_opts_info["cookiefile"] = "cookies.txt"
+        except: pass
 
     video = None
     url = None
@@ -383,6 +391,13 @@ def get_youtube_clip(query, output_path, duration=4.0):
         # cleanly, providing an I-Frame at t=0 so MoviePy doesn't generate grey/glitchy screens!
         'download_ranges': yt_dlp.utils.download_range_func(None, [(start_time, end_time)]),
     }
+    
+    if os.path.exists("cookies.txt"):
+        try:
+            with open("cookies.txt", "r") as f:
+                if ".youtube.com" in f.read():
+                    ydl_opts_download["cookiefile"] = "cookies.txt"
+        except: pass
 
     try:
         print(f"      ⏱️ Extrayendo {duration}s desde t={start_time}s...")
