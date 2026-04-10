@@ -226,42 +226,52 @@ def generate_script(topic=None, specific_hook=None, style="curiosity", is_test=F
 
     import time
     
-    max_retries = 5
+    # Models to try in order of preference (fallback if primary is overloaded)
+    models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
+    max_retries = 3
     base_delay = 15
     
-    for attempt in range(max_retries):
-        try:
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type='application/json'
-                )
-            )
-            
-            text_response = response.text
+    for model_name in models_to_try:
+        print(f"🤖 Intentando con modelo: {model_name}...")
+        
+        for attempt in range(max_retries):
             try:
-                script_data = json.loads(text_response)
-                return script_data
-            except Exception as json_err:
-                with open("bad_response.json", "w", encoding="utf-8") as f:
-                    f.write(text_response)
-                raise json_err
-            
-        except Exception as e:
-            error_str = str(e)
-            # Retry on rate limits, server overload (503), OR network/dns errors
-            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str or "503" in error_str or "UNAVAILABLE" in error_str or "500" in error_str or "INTERNAL" in error_str or "getaddrinfo failed" in error_str or "11001" in error_str:
-                if attempt < max_retries - 1:
-                    wait_time = base_delay * (attempt + 1)
-                    print(f"⚠️ Error transitorio ({e}). Reintentando en {wait_time}s... (Intento {attempt+1}/{max_retries})")
-                    time.sleep(wait_time)
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type='application/json'
+                    )
+                )
+                
+                text_response = response.text
+                try:
+                    script_data = json.loads(text_response)
+                    return script_data
+                except Exception as json_err:
+                    with open("bad_response.json", "w", encoding="utf-8") as f:
+                        f.write(text_response)
+                    raise json_err
+                
+            except Exception as e:
+                error_str = str(e)
+                # Retry on rate limits, server overload (503), OR network/dns errors
+                is_transient = any(k in error_str for k in ["429", "RESOURCE_EXHAUSTED", "503", "UNAVAILABLE", "500", "INTERNAL", "getaddrinfo failed", "11001"])
+                if is_transient:
+                    if attempt < max_retries - 1:
+                        wait_time = base_delay * (attempt + 1)
+                        print(f"⚠️ Error transitorio ({e}). Reintentando en {wait_time}s... (Intento {attempt+1}/{max_retries})")
+                        time.sleep(wait_time)
+                    else:
+                        print(f"⚠️ Modelo {model_name} agotó reintentos. Probando siguiente modelo...")
+                        break  # Break inner loop, try next model
                 else:
-                    print(f"❌ Error: Fallaron los reintentos tras error: {e}")
+                    print(f"Error generating script: {e}")
                     return None
-            else:
-                print(f"Error generating script: {e}")
-                return None
+    
+    print(f"❌ Error: Todos los modelos fallaron después de agotar reintentos.")
+    return None
+
 
 def generate_viral_hooks(base_topic, trending_list, lang="en"):
     """
