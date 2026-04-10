@@ -226,8 +226,8 @@ def generate_script(topic=None, specific_hook=None, style="curiosity", is_test=F
 
     import time
     
-    max_retries = 3
-    base_delay = 10
+    max_retries = 5
+    base_delay = 15
     
     for attempt in range(max_retries):
         try:
@@ -250,8 +250,8 @@ def generate_script(topic=None, specific_hook=None, style="curiosity", is_test=F
             
         except Exception as e:
             error_str = str(e)
-            # Retry on rate limits OR network/dns errors
-            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str or "getaddrinfo failed" in error_str or "11001" in error_str:
+            # Retry on rate limits, server overload (503), OR network/dns errors
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str or "503" in error_str or "UNAVAILABLE" in error_str or "500" in error_str or "INTERNAL" in error_str or "getaddrinfo failed" in error_str or "11001" in error_str:
                 if attempt < max_retries - 1:
                     wait_time = base_delay * (attempt + 1)
                     print(f"⚠️ Error transitorio ({e}). Reintentando en {wait_time}s... (Intento {attempt+1}/{max_retries})")
