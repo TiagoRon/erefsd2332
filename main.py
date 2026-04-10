@@ -246,7 +246,7 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
         
         from src.tts_engine import generate_audio
         from src.background_generator import generate_scene_clip
-        from src.stock_client import get_stock_video, get_stock_image, get_wikipedia_image, get_giphy_video, get_youtube_clip
+        from src.stock_client import get_stock_video, get_stock_image, get_wikipedia_image, get_giphy_video, get_youtube_clip, get_best_clip
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
         # Select Voice for this video
@@ -379,7 +379,7 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
                 
                 if need_yt_download:
                     yt_path = os.path.join(video_output_dir, f"yt_cache_{idx}_{overlay_term[:30].replace(' ','_')}.mp4")
-                    if get_youtube_clip(overlay_term, yt_path, sub_dur):
+                    if get_best_clip(overlay_term, yt_path, sub_dur):
                         with cache_lock:
                             yt_cache[overlay_term] = yt_path
                         specific_clip_path = yt_path

@@ -165,21 +165,35 @@ def generate_script(topic=None, specific_hook=None, style="curiosity", is_test=F
        - If YES → `visual_overlay_term` MUST be set. No exceptions.
        - If NO (the scene talks about a completely generic concept like 'time', 'nature', 'science', 'the universe') → `visual_overlay_term` = null.
        
+       **NEW: SCENE-SPECIFIC SEARCH TERMS (CRITICAL FOR VIDEO QUALITY)**:
+       The system searches Reddit, Dailymotion, Twitter, and YouTube for REAL clips.
+       Your `visual_overlay_term` is used as the EXACT search query on these platforms.
+       Therefore, it MUST describe the SPECIFIC SCENE or MOMENT you want to show, NOT just a character name.
+       
        MANDATORY CASES — ALWAYS set `visual_overlay_term`:
-       - Any ANIME, CARTOON, or VIDEO GAME by title or character → "Dragon Ball Z anime", "Goku escena", "Super Mario Bros", "Naruto Shippuden pelea"
-       - Any MOVIE or TV SHOW by title → "El Clan pelicula", "Stranger Things serie", "The Dark Knight escena" (IMPORTANT: Prioritize the TITLE of the show, NOT the actors/directors, so we see the actual show!)
-       - Any REAL PERSON (politician, athlete, musician, actor) → Append 'interview' or 'face' for best results: "Lionel Messi interview", "Albert Einstein face", "Freddie Mercury live", "Guillermo Francella cara"
-       - Any COMPANY or BRAND → Append 'logo' or 'b-roll' for best results: "Netflix logo b-roll", "Disney company logo", "Apple iPhone b-roll", "Ferrari F40 driving"
-       - Any SPECIFIC PLACE (famous building, city, landmark) → "Torre Eiffel", "Machu Picchu", "Buenos Aires drone"
-       - Any HISTORICAL EVENT → "Segunda Guerra Mundial batalla", "Revolución Francesa pintura"
+       - Any ANIME scene → Describe the EXACT moment: "Goku vs Vegeta fight Dragon Ball Z", "Goku Super Saiyan transformation", "Vegeta Final Flash scene", "Naruto vs Sasuke final battle", "Luffy Gear 5 scene One Piece"
+       - Any MOVIE or TV SHOW → Describe the SCENE: "Breaking Bad I am the danger scene", "Joker staircase dance scene", "Thanos snap Avengers Infinity War", "Guillermo Francella El Clan court scene"
+       - Any REAL PERSON → Describe what they are DOING: "Messi World Cup winning goal 2022", "Cristiano Ronaldo celebration", "Freddie Mercury Live Aid performance", "Elon Musk Cybertruck reveal"
+       - Any COMPANY or BRAND → Show the PRODUCT or MOMENT: "Tesla Cybertruck driving", "iPhone reveal Steve Jobs", "SpaceX rocket landing", "Ferrari F40 racing"
+       - Any SPECIFIC PLACE → Show the LOCATION: "Torre Eiffel night lights", "Machu Picchu drone aerial", "Tokyo Shibuya crossing"
+       - Any HISTORICAL EVENT → Show the EVENT: "D-Day Normandy landing footage", "Moon landing Apollo 11", "Berlin Wall fall 1989"
+       - Any SPORTS moment → Show the PLAY: "Maradona Hand of God goal", "Michael Jordan last shot 1998"
+       
+       EXAMPLES OF BAD vs GOOD:
+       - BAD: "Goku" → TOO VAGUE, returns random unrelated videos
+       - GOOD: "Goku vs Frieza fight Namek Dragon Ball Z" → Returns the EXACT scene
+       - BAD: "El Clan" → Returns random unrelated results  
+       - GOOD: "Guillermo Francella El Clan pelicula escena" → Returns movie clips
+       - BAD: "Messi" → Returns random interviews
+       - GOOD: "Messi gol final Copa del Mundo 2022" → Returns the exact moment
        
        FORBIDDEN (NEVER put these in visual_overlay_term, use null):
        - Generic adjectives: "genius", "funny", "dramatic", "epic battle"
        - Generic concepts: "cinema", "movies", "comedy", "acting", "drama", "anime", "fight"
+       - Single names without context: "Goku", "Messi", "Einstein" (ALWAYS add the scene/moment context)
        - Things that are already described generically in visual_search_term_en
        
-       SEARCH QUALITY: Make the term EXACT and SEARCHABLE on YouTube/Google. Include the person's full name + the specific work if relevant.
-       Example: NOT "El Clan" alone. YES: "Guillermo Francella El Clan pelicula".
+       SEARCH QUALITY: Make terms 4-8 words, describing the EXACT scene/moment. The system searches Reddit, Dailymotion, and YouTube — specific scene descriptions get the BEST and most RELEVANT clip results.
     7. **LANGUAGE**: 
        - The `text` (script), `title`, and `hashtags` MUST be in **{lang_name}**.
        - `visual_search_term_en` MUST be in **ENGLISH**.
