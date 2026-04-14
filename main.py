@@ -246,7 +246,7 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
         
         from src.tts_engine import generate_audio
         from src.background_generator import generate_scene_clip
-        from src.stock_client import get_stock_video, get_stock_image, get_wikipedia_image, get_giphy_video, get_youtube_clip, get_best_clip
+        from src.stock_client import get_stock_video, get_stock_image, get_wikipedia_image, get_giphy_video, get_youtube_clip, get_best_clip, get_subject_face_image, _extract_subject_name
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
         # Select Voice for this video
@@ -362,15 +362,15 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
             # Only fall back to generic Pexels VIDEO if all specific sources fail.
             # ---------------------------------------------------------------
             if overlay_term:
-                specific_clip_path = None   # video clip (YouTube)
-                specific_img_path = None    # photo (Wikipedia / Pexels image)
+                specific_clip_path = None   # video clip (YouTube/Dailymotion/etc)
+                specific_img_path = None    # photo (Wikipedia / DuckDuckGo / Pexels image)
                 
-                # --- Try YouTube (cached per overlay_term) ---
+                # --- Try video clip (cached per overlay_term) ---
                 with cache_lock:
                     if overlay_term in yt_cache:
                         specific_clip_path = yt_cache[overlay_term]
                         if specific_clip_path:
-                            print(f"   ♻️ Reutilizando clip de YouTube en caché: {overlay_term}")
+                            print(f"   ♻️ Reutilizando clip en caché: {overlay_term}")
                         need_yt_download = False
                     else:
                         # Reserve the slot before releasing lock so other threads don't try to download too
@@ -385,7 +385,7 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
                         specific_clip_path = yt_path
                     # else: stays None in cache (failed)
                 
-                # --- Try Wikipedia image (cached per overlay_term) ---
+                # --- FACE GUARANTEE: If video clip failed, ensure we get at least the subject's face ---
                 with cache_lock:
                     if overlay_term in img_cache:
                         specific_img_path = img_cache[overlay_term]
@@ -397,46 +397,64 @@ def run_batch(count, topic=None, use_trends=False, style="curiosity", log_func=p
                         need_img_download = True
                 
                 if need_img_download:
-                    wiki_img_path = os.path.join(video_output_dir, f"img_cache_{idx}_{overlay_term[:30].replace(' ','_')}.jpg")
-                    if get_wikipedia_image(overlay_term, wiki_img_path):
+                    face_img_path = os.path.join(video_output_dir, f"face_{idx}_{overlay_term[:30].replace(' ','_')}.jpg")
+                    # Use the NEW face guarantee function (tries Wikipedia smart, DuckDuckGo, Pexels)
+                    if get_subject_face_image(overlay_term, face_img_path):
                         with cache_lock:
-                            img_cache[overlay_term] = wiki_img_path
-                        specific_img_path = wiki_img_path
+                            img_cache[overlay_term] = face_img_path
+                        specific_img_path = face_img_path
                     else:
-                        # Try Pexels image as photo fallback
-                        pexels_img_path = os.path.join(video_output_dir, f"pexels_img_{idx}_{overlay_term[:30].replace(' ','_')}.jpg")
-                        if get_stock_image(overlay_term, pexels_img_path):
+                        # Legacy fallback: try raw Wikipedia + Pexels image
+                        wiki_img_path = os.path.join(video_output_dir, f"img_cache_{idx}_{overlay_term[:30].replace(' ','_')}.jpg")
+                        if get_wikipedia_image(overlay_term, wiki_img_path):
                             with cache_lock:
-                                img_cache[overlay_term] = pexels_img_path
-                            specific_img_path = pexels_img_path
-                        # else: stays None in cache (failed)
+                                img_cache[overlay_term] = wiki_img_path
+                            specific_img_path = wiki_img_path
+                        else:
+                            pexels_img_path = os.path.join(video_output_dir, f"pexels_img_{idx}_{overlay_term[:30].replace(' ','_')}.jpg")
+                            if get_stock_image(overlay_term, pexels_img_path):
+                                with cache_lock:
+                                    img_cache[overlay_term] = pexels_img_path
+                                specific_img_path = pexels_img_path
 
                 
-                # --- Fill sub-clips: prefer video clip, then photo, then generic ---
+                # --- Fill sub-clips: IMPROVED allocation ---
+                # If we have BOTH a video clip and an image, use them both across sub-clips
+                # If we only have an image, use it in the FIRST sub-clip for instant recognition
+                # Reuse subject image in more sub-clips (not just clip_i==0) for better presence
                 for clip_i in range(num_clips):
                     if is_cancelled and is_cancelled():
                         break
                     
-                    if clip_i == 0 and specific_clip_path:
-                        # Use the YouTube clip ONLY for the first sub-clip (fast appearance)
+                    if specific_clip_path and clip_i == 0:
+                        # Use the video clip for the first sub-clip (most impactful)
                         visual_clips_paths.append(specific_clip_path)
-                    elif clip_i == 0 and specific_img_path:
-                        # Use the photo ONLY for the first sub-clip (fast appearance)
+                    elif specific_img_path and clip_i == 0:
+                        # Use the subject's face/photo for instant recognition
+                        visual_clips_paths.append(specific_img_path)
+                    elif specific_img_path and clip_i == num_clips - 1 and num_clips > 2:
+                        # Also use subject image in the LAST sub-clip for reinforcement
                         visual_clips_paths.append(specific_img_path)
                     else:
-                        # For subsequent sub-clips (or if specific failed), use generic Pexels video (fast pacing)
+                        # For middle sub-clips, use generic Pexels video (fast pacing)
                         bg_path = os.path.join(video_output_dir, f"scene_{idx}_part{clip_i}.mp4")
                         query = search_query_base
                         if clip_i == 1: query = f"{search_query_base} close up"
                         elif clip_i >= 2: query = f"{search_query_base} cinematic"
                         stock_ok = get_stock_video(query, sub_dur, bg_path, used_ids=used_footage_ids, is_cancelled=is_cancelled)
                         if not stock_ok:
-                            generate_scene_clip(
-                                scene.get('visual_concept', 'mystery'),
-                                scene.get('color_palette', 'dark'),
-                                sub_dur, bg_path
-                            )
-                        visual_clips_paths.append(bg_path)
+                            # If generic stock also fails but we have subject image, use it
+                            if specific_img_path:
+                                visual_clips_paths.append(specific_img_path)
+                            else:
+                                generate_scene_clip(
+                                    scene.get('visual_concept', 'mystery'),
+                                    scene.get('color_palette', 'dark'),
+                                    sub_dur, bg_path
+                                )
+                                visual_clips_paths.append(bg_path)
+                        else:
+                            visual_clips_paths.append(bg_path)
                 
                 return idx, visual_clips_paths
 
